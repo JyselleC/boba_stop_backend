@@ -1,7 +1,3 @@
-"""
-URL configuration for boba_inventory_backend project.
-"""
-
 from django.contrib import admin
 from django.urls import path, include
 
