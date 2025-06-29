@@ -42,7 +42,60 @@ class ProductViewSet(viewsets.ModelViewSet):
             'out_of_stock_items': out_of_stock_count,
             'suppliers_count': suppliers_count
         })
-
+    
+    @action(detail=False, methods=['post'])
+    def send_low_stock_alert(self, request):
+        """Send SMS alert for low stock items to multiple recipients"""
+        try:
+            # Get low stock products
+            low_stock_products = Product.objects.filter(
+                quantity__lte=F('restock_threshold')
+            )
+            
+            if not low_stock_products.exists():
+                return Response({'message': 'No low stock items found'})
+            
+            # Create alert message
+            product_names = [p.name for p in low_stock_products[:5]]  # Limit to 5 items
+            message = f"🧋 Boba Stop Alert: Low stock items: {', '.join(product_names)}"
+            if low_stock_products.count() > 5:
+                message += f" and {low_stock_products.count() - 5} more items."
+            
+            # Send SMS using Twilio to all recipients
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            
+            results = []
+            for recipient in settings.SMS_RECIPIENTS:
+                if recipient:  # Only send if recipient is not empty
+                    try:
+                        twilio_message = client.messages.create(
+                            body=message,
+                            from_=settings.TWILIO_PHONE_NUMBER,
+                            to=recipient
+                        )
+                        results.append({
+                            'recipient': recipient,
+                            'status': 'sent',
+                            'sid': twilio_message.sid
+                        })
+                    except Exception as e:
+                        results.append({
+                            'recipient': recipient,
+                            'status': 'failed',
+                            'error': str(e)
+                        })
+            
+            return Response({
+                'message': f'Alerts sent to {len([r for r in results if r["status"] == "sent"])} recipients',
+                'items_count': low_stock_products.count(),
+                'results': results
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to send alert: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.all().order_by('name')
     serializer_class = SupplierSerializer

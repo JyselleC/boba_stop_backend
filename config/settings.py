@@ -125,7 +125,17 @@ REST_FRAMEWORK = {
 }
 
 # Twilio settings
+# Twilio settings
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
 TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
 ALERT_RECIPIENT = config('ALERT_RECIPIENT', default='')
+ALERT_RECIPIENT_2 = config('ALERT_RECIPIENT_2', default='')
+ALERT_RECIPIENT_3 = config('ALERT_RECIPIENT_3', default='')
+
+# SMS Recipients list
+SMS_RECIPIENTS = [
+    ALERT_RECIPIENT,
+    ALERT_RECIPIENT_2, 
+    ALERT_RECIPIENT_3,
+]
